@@ -723,14 +723,10 @@ namespace AnhPhongProject2
 
                         if (allBlockTableRecord.Keys.Contains(brefName) && !NothingBlocks.Contains(brefName) && acceptableLayer.Contains(newBref1.Layer.Split('|').Last()))
                         {
-                            BlockReference bref2 = CopyDynamicBlock(spaceRecord, ref newBref1, allBlockTableRecord[brefName], tr);
-                            if (!hasBoundary || canAdd(isInverted, boundary, bref2.Position))
+                            if(canAdd(isInverted, boundary, newBref1.Position))
                             {
+                                BlockReference bref2 = CopyDynamicBlock(spaceRecord, ref newBref1, allBlockTableRecord[brefName], tr);
                                 blocks.Add(bref2);
-                            }
-                            else
-                            {
-                                bref2.Erase();
                             }
                         }
                         else
@@ -745,49 +741,42 @@ namespace AnhPhongProject2
                             {
                                 NothingBlocks.Add(brefName);
                             }
-                            if (hasBoundary)
-                            {
-                                foreach (BlockReference nbref in newObjects)
-                                {
-                                    if (canAdd(isInverted, boundary, nbref.Position))
-                                    {
-                                        blocks.Add(nbref);
-                                    }
-                                    else
-                                    {
-                                        nbref.Erase();
-                                    }
-                                }
 
-                                foreach(Line line in newLines)
-                                {
-                                    if(canAdd(isInverted, boundary, line.StartPoint) || canAdd(isInverted, boundary, line.EndPoint))
-                                    {
-                                        lines.Add(line);
-                                    }
-                                    else
-                                    {
-                                        line.Erase();
-                                    }
-                                }
-                                foreach(Polyline pline in newPlines)
-                                {
-                                    if(canAddPolyline(isInverted, boundary, pline))
-                                    {
-                                        plines.Add(pline);
-                                    }
-                                    else
-                                    {
-                                        pline.Erase();
-                                    }
-                                }
-                            }
-                            else
+                            foreach (BlockReference nbref in newObjects)
                             {
-                                blocks.AddRange(newObjects);
-                                lines.AddRange(newLines);
-                                plines.AddRange(newPlines);
+                                if (canAdd(isInverted, boundary, nbref.Position))
+                                {
+                                    blocks.Add(nbref);
+                                }
+                                else
+                                {
+                                    nbref.Erase();
+                                }
                             }
+                            
+                            foreach(Line line in newLines)
+                            {
+                                if(canAdd(isInverted, boundary, line.StartPoint) || canAdd(isInverted, boundary, line.EndPoint))
+                                {
+                                    lines.Add(line);
+                                }
+                                else
+                                {
+                                    line.Erase();
+                                }
+                            }
+                            foreach(Polyline pline in newPlines)
+                            {
+                                if(canAddPolyline(isInverted, boundary, pline))
+                                {
+                                    plines.Add(pline);
+                                }
+                                else
+                                {
+                                    pline.Erase();
+                                }
+                            }
+
                         }
                     }
                     else if (id.ObjectClass == RXObject.GetClass(typeof(Line)))
@@ -795,14 +784,10 @@ namespace AnhPhongProject2
                         Line line = (Line)tr.GetObject(id, OpenMode.ForRead);
                         if (acceptableLayer.Contains(line.Layer.Split('|').Last()))
                         {
-                            Line newLine = CopyLine(spaceRecord, ref line, tr);
-                            if (canAdd(isInverted, boundary, newLine.StartPoint) || canAdd(isInverted, boundary, newLine.EndPoint))
+                            if(canAdd(isInverted, boundary, line.StartPoint) || canAdd(isInverted, boundary, line.EndPoint))
                             {
+                                Line newLine = CopyLine(spaceRecord, ref line, tr);
                                 lines.Add(newLine);
-                            }
-                            else
-                            {
-                                newLine.Erase();
                             }
                         }
                     } else if(id.ObjectClass == RXObject.GetClass(typeof(Polyline)))
@@ -810,16 +795,10 @@ namespace AnhPhongProject2
                         Polyline pline = (Polyline)tr.GetObject(id, OpenMode.ForRead);
                         if (acceptableLayer.Contains(pline.Layer.Split('|').Last()))
                         {
-                            Polyline newPline = CopyPolyline(spaceRecord, ref pline, tr);
-                            if(canAddPolyline(isInverted, boundary, newPline))
-                            {
+                            if(canAddPolyline(isInverted, boundary, pline)){
+                                Polyline newPline = CopyPolyline(spaceRecord, ref pline, tr);
                                 plines.Add(newPline);
-                            }
-                            else
-                            {
-                                newPline.Erase();
-                            }
-                            
+                            }                            
                         }
                     }
                 }

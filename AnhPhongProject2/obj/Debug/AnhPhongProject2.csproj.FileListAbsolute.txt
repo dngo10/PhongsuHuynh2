@@ -3,4 +3,3 @@ C:\Users\dngo\source\repos\AnhPhongProject2\AnhPhongProject2\bin\Debug\AnhPhongP
 C:\Users\dngo\source\repos\AnhPhongProject2\AnhPhongProject2\obj\Debug\AnhPhongProject2.csproj.CoreCompileInputs.cache
 C:\Users\dngo\source\repos\AnhPhongProject2\AnhPhongProject2\obj\Debug\AnhPhongProject2.dll
 C:\Users\dngo\source\repos\AnhPhongProject2\AnhPhongProject2\obj\Debug\AnhPhongProject2.pdb
-C:\Users\dngo\source\repos\AnhPhongProject2\AnhPhongProject2\obj\Debug\AnhPhongProject2.csprojAssemblyReference.cache
