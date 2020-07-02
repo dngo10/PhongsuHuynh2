@@ -33,6 +33,9 @@ namespace AnhPhongProject2
         List<string> blockNames = new List<string>();
         private List<Point3d> m_pts = new List<Point3d>();
         Dictionary<string, BlockTableRecord> allBlockTableRecord = new Dictionary<string, BlockTableRecord>();
+
+        Dictionary<ObjectId, DynamicBlockReferenceProperty[]> dynaProps = new Dictionary<ObjectId, DynamicBlockReferenceProperty[]>();
+
         #region Helper
 
         public void copyLocktableRecord()
@@ -169,7 +172,7 @@ namespace AnhPhongProject2
 
             spaceRecord.UpgradeOpen();
             spaceRecord.AppendEntity(newbref);
-            tr.AddNewlyCreatedDBObject(newbref, true);
+            //tr.AddNewlyCreatedDBObject(newbref, true);
             spaceRecord.DowngradeOpen();
 
             //newbref.Visible = false;
@@ -191,18 +194,32 @@ namespace AnhPhongProject2
             //
             //}
 
-            for (int i = 0; i < bref.DynamicBlockReferencePropertyCollection.Count; i++)
-            {
+            DynamicBlockReferenceProperty[] array = new DynamicBlockReferenceProperty[100];
+            bref.DynamicBlockReferencePropertyCollection.CopyTo(array, 0);
 
-                if (!newbref.DynamicBlockReferencePropertyCollection[i].ReadOnly &&
-                    !bref.DynamicBlockReferencePropertyCollection[i].ReadOnly &&
-                    newbref.DynamicBlockReferencePropertyCollection[i].PropertyName == bref.DynamicBlockReferencePropertyCollection[i].PropertyName
-                    )
-                {
-                    newbref.DynamicBlockReferencePropertyCollection[i].Value = bref.DynamicBlockReferencePropertyCollection[i].Value;
-                }
+            dynaProps.Add(newbref.ObjectId, array);
 
-            }
+            //int i = 0;
+            //while(array[i] != null)
+            //{
+            //    if (!array[i].ReadOnly)
+            //    {
+            //        newbref.DynamicBlockReferencePropertyCollection[i].Value = array[i].Value;
+            //    }
+            //    i++;
+            //}
+
+            //for (int i = 0; i < bref.DynamicBlockReferencePropertyCollection.Count; i++)
+            //{
+            //
+            //    if (!newbref.DynamicBlockReferencePropertyCollection[i].ReadOnly &&
+            //        !bref.DynamicBlockReferencePropertyCollection[i].ReadOnly &&
+            //        newbref.DynamicBlockReferencePropertyCollection[i].PropertyName == bref.DynamicBlockReferencePropertyCollection[i].PropertyName
+            //        )
+            //    {
+            //        newbref.DynamicBlockReferencePropertyCollection[i].Value = bref.DynamicBlockReferencePropertyCollection[i];
+            //    }
+            //}
             return newbref;
         }
 
@@ -217,7 +234,9 @@ namespace AnhPhongProject2
             //newLine.Linetype = line.Linetype;
             newLine.Linetype = "SWALL";
             newLine.PlotStyleName = line.PlotStyleName;
-            
+            newLine.Color = line.Color;
+            newLine.ColorIndex = line.ColorIndex;
+
             spaceRecord.UpgradeOpen();
             spaceRecord.AppendEntity(newLine);
             tr.AddNewlyCreatedDBObject(newLine, true);
@@ -461,7 +480,6 @@ namespace AnhPhongProject2
             {
                 //ent.TransformBy(matrix);
                 obIdCol.Add(ent.ObjectId);
-
             }
 
             IdMapping mapping = new IdMapping();
@@ -486,6 +504,16 @@ namespace AnhPhongProject2
             ans.AddRange(plines);
             for(int i = 0; i < blockReferences.Count; i++)
             {
+                int x = 0;
+                while(dynaProps[blockReferences[i].ObjectId][x] != null)
+                {
+                    if (!dynaProps[blockReferences[i].ObjectId][x].ReadOnly)
+                    {
+                        blockReferences[i].DynamicBlockReferencePropertyCollection[x].Value = dynaProps[blockReferences[i].ObjectId][x].Value;
+                    }
+                    x++;
+                }
+
                 ans.AddRange(exploreBlock(ref spaceRecord, blockReferences[i], ref tr));
             }
 
@@ -633,9 +661,9 @@ namespace AnhPhongProject2
                 {
                     BlockReference bref = dbObject as BlockReference;
                     BlockTableRecord brefRecord = (BlockTableRecord)tr.GetObject(bref.BlockTableRecord, OpenMode.ForRead);
-
+                
                     string brefName = bref.IsDynamicBlock ? ((BlockTableRecord)bref.DynamicBlockTableRecord.GetObject(OpenMode.ForRead)).Name : bref.Name;
-
+                
                     if (allBlockTableRecord.Keys.Contains(brefName) && acceptableLayer.Contains(bref.Layer.Split('|').Last()))
                     {
                         sWallBlocks.Add(CopyDynamicBlock(spaceRecord, ref bref, allBlockTableRecord[brefName], tr));
@@ -645,7 +673,7 @@ namespace AnhPhongProject2
                         List<BlockReference> rawNewBlocks = new List<BlockReference>();
                         List<Line> newLines = new List<Line>();
                         List<Polyline> newPLines = new List<Polyline>();
-
+                
                         InspectBlockReference(ref tr, ref spaceRecord, ref bref, ref rawNewBlocks, ref newLines, ref newPLines, ref NothingBlocks);
                         sWallBlocks.AddRange(rawNewBlocks);
                         sWallLines.AddRange(newLines);
@@ -664,6 +692,7 @@ namespace AnhPhongProject2
                 }
                 else
                 {
+                    dynaProps.Remove(bref.ObjectId);
                     bref.Erase();
                 }
             }
@@ -750,6 +779,7 @@ namespace AnhPhongProject2
                                 }
                                 else
                                 {
+                                    dynaProps.Remove(nbref.ObjectId);
                                     nbref.Erase();
                                 }
                             }
@@ -855,6 +885,8 @@ namespace AnhPhongProject2
         [CommandMethod("PhongSuHuynh")]
         public void BoxJig()
         {
+            DateTime first, second;
+
             CheckLinetype();
             createLayer(frameBlockAboveLayer, 1);
             m_pts.Clear();
@@ -881,11 +913,16 @@ namespace AnhPhongProject2
 
                     HashSet<string> NothingBlocks = new HashSet<string>();
 
+                    first = DateTime.Now;
                     //RunCode(rec.firstPoint, rec.secondPoint, tr, ref db, ed, ref blocks, ref lines);
                     RunCode(m_pts, tr, ref db, ed, ref blocks, ref lines, ref plines, ref NothingBlocks);
 
 
                     BlockReference bref = createAnonymousBlock(bt, MergeEntity(ref lines, ref plines, ref blocks, btr, tr), btr, tr, db);
+
+                    second = DateTime.Now;
+                    ed.WriteMessage(string.Format("\nRun Time: {0}", (second - first).TotalSeconds));
+
                     bref.Layer = frameBlockAboveLayer;
                     if (blocks.Count != 0 || lines.Count != 0 || plines.Count != 0)
                     {
